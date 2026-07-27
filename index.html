@@ -2,11 +2,198 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Narrative Viz</title>
+  <title>Narrative Visualization - Slideshow Framework</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    #scene-title {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    #chart {
+      border: 1px solid #ccc;
+      background: #fafafa;
+    }
+
+    .annotation-box {
+      max-width: 600px;
+      margin-top: 15px;
+      padding: 12px 16px;
+      background: #fff8dc;
+      border-left: 4px solid #d4a017;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    #nav {
+      margin-top: 20px;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 8px 16px;
+      margin: 0 8px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    #scene-indicator {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello, this is working.</h1>
-  <svg width="600" height="400" style="border:1px solid #ccc;"></svg>
+
+  <div id="scene-title"></div>
+  <svg id="chart" width="700" height="450"></svg>
+  <div id="annotation" class="annotation-box"></div>
+
+  <div id="nav">
+    <button id="prevBtn">&larr; Previous</button>
+    <button id="nextBtn">Next &rarr;</button>
+  </div>
+  <div id="scene-indicator"></div>
+
+  <script>
+
+    // ---------------------------------------------------
+    // PARAMETERS (state variables for the narrative viz)
+    // ---------------------------------------------------
+    let currentScene = 0;
+
+    // Each scene is an object describing its title, annotation text,
+    // and the function that draws it. Replace drawSceneN with real
+    // D3 code later — for now they just draw a placeholder shape so
+    // you can confirm the framework works end-to-end.
+    const scenes = [
+      {
+        title: "Scene 1: GDP vs Life Expectancy",
+        annotation: "Placeholder annotation for scene 1. This is where you'll " +
+                    "call out the trend or outlier that matters for this scene.",
+        draw: drawScene1
+      },
+      {
+        title: "Scene 2: Schooling vs Life Expectancy",
+        annotation: "Placeholder annotation for scene 2.",
+        draw: drawScene2
+      },
+      {
+        title: "Scene 3: Explore It Yourself",
+        annotation: "Placeholder annotation for scene 3. This scene will let " +
+                    "the user toggle between variables freely.",
+        draw: drawScene3
+      }
+    ];
+
+    // ---------------------------------------------------
+    // TRIGGERS (event listeners that change parameters
+    // and re-render the display)
+    // ---------------------------------------------------
+    d3.select("#nextBtn").on("click", function() {
+      if (currentScene < scenes.length - 1) {
+        currentScene++;
+        render();
+      }
+    });
+
+    d3.select("#prevBtn").on("click", function() {
+      if (currentScene > 0) {
+        currentScene--;
+        render();
+      }
+    });
+
+    // ---------------------------------------------------
+    // RENDER FUNCTION (uses the parameter `currentScene`
+    // to determine what to draw)
+    // ---------------------------------------------------
+    function render() {
+      // Update title and annotation text based on current scene
+      d3.select("#scene-title").text(scenes[currentScene].title);
+      d3.select("#annotation").text(scenes[currentScene].annotation);
+      d3.select("#scene-indicator")
+        .text("Scene " + (currentScene + 1) + " of " + scenes.length);
+
+      // Disable prev/next buttons at the ends of the sequence
+      d3.select("#prevBtn").property("disabled", currentScene === 0);
+      d3.select("#nextBtn").property("disabled", currentScene === scenes.length - 1);
+
+      // Clear the SVG completely, then let the scene's draw function
+      // repopulate it. This is the "clear and repopulate" scene
+      // pattern mentioned in the assignment instructions.
+      const svg = d3.select("#chart");
+      svg.selectAll("*").remove();
+
+      scenes[currentScene].draw(svg);
+    }
+
+    // ---------------------------------------------------
+    // PLACEHOLDER SCENE-DRAWING FUNCTIONS
+    // Replace the contents of these with real D3 chart code
+    // once your data is loaded. For now they just prove the
+    // framework switches scenes correctly.
+    // ---------------------------------------------------
+    function drawScene1(svg) {
+      svg.append("circle")
+        .attr("cx", 350)
+        .attr("cy", 225)
+        .attr("r", 60)
+        .attr("fill", "steelblue");
+      svg.append("text")
+        .attr("x", 350)
+        .attr("y", 230)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .text("Scene 1 placeholder");
+    }
+
+    function drawScene2(svg) {
+      svg.append("rect")
+        .attr("x", 250)
+        .attr("y", 150)
+        .attr("width", 200)
+        .attr("height", 150)
+        .attr("fill", "darkorange");
+      svg.append("text")
+        .attr("x", 350)
+        .attr("y", 230)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .text("Scene 2 placeholder");
+    }
+
+    function drawScene3(svg) {
+      svg.append("polygon")
+        .attr("points", "350,150 450,300 250,300")
+        .attr("fill", "seagreen");
+      svg.append("text")
+        .attr("x", 350)
+        .attr("y", 260)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .text("Scene 3 placeholder");
+    }
+
+    // ---------------------------------------------------
+    // INITIAL RENDER
+    // ---------------------------------------------------
+    render();
+
+  </script>
+
 </body>
 </html>
