@@ -110,8 +110,8 @@
     // Fixed GDP per-capita display range: $5,000 - $20,000.
     // Countries outside this range will simply not appear (clipped).
     // Change these two numbers if you want a different window.
-    const GDP_MIN = 5;
-    const GDP_MAX = 20;
+    const GDP_MIN = 7.5;
+    const GDP_MAX = 15;
 
     const outlierCountries = ["Qatar", "Kuwait", "United States"];
 
@@ -236,7 +236,7 @@
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x)
-          .tickValues([5, 7.5, 10, 12.5, 15, 17.5, 20])
+          .tickValues([7.5, 10, 12.5, 15])
           .tickFormat(d3.format(",")));
 
       // Y axis — explicit numeric life expectancy ticks
