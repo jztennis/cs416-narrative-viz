@@ -172,7 +172,7 @@
       );
 
       console.log("Scene 1 data points (before GDP window):", scene1Data.length);
-      console.log(f"Points within {GDP_MIN}-{GDP_MAX} GDP window:",
+      console.log("Points within 5-20 GDP window:",
         scene1Data.filter(d => d.GDP >= GDP_MIN && d.GDP <= GDP_MAX).length);
 
       render();
