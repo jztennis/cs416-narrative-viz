@@ -172,7 +172,7 @@
       );
 
       console.log("Scene 1 data points (before GDP window):", scene1Data.length);
-      console.log("Points within $5k-$20k GDP window:",
+      console.log(f"Points within {GDP_MIN}-{GDP_MAX} GDP window:",
         scene1Data.filter(d => d.GDP >= GDP_MIN && d.GDP <= GDP_MAX).length);
 
       render();
@@ -236,7 +236,7 @@
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x)
-          .tickValues([5000, 7500, 10000, 12500, 15000, 17500, 20000])
+          .tickValues([5, 7.5, 10, 12.5, 15, 17.5, 20])
           .tickFormat(d3.format(",")));
 
       // Y axis — explicit numeric life expectancy ticks
