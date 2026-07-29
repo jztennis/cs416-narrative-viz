@@ -96,8 +96,8 @@
     // PARAMETERS
     // ---------------------------------------------------
     let currentScene = 0;
-    let fullData = [];       // will hold the loaded CSV
-    let scene1Data = [];     // filtered/cleaned data for scene 1
+    let fullData = [];
+    let scene1Data = [];
 
     const width = 700;
     const height = 450;
@@ -105,11 +105,14 @@
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    const YEAR = 2014; // change this if another year has better coverage
+    const YEAR = 2014;
 
-    // Countries to call out as GDP outliers in Scene 1.
-    // Adjust these names to match whatever appears in your CSV's
-    // Country column once you've checked the actual data.
+    // Fixed GDP per-capita display range: $5,000 - $20,000.
+    // Countries outside this range will simply not appear (clipped).
+    // Change these two numbers if you want a different window.
+    const GDP_MIN = 5000;
+    const GDP_MAX = 20000;
+
     const outlierCountries = ["Qatar", "Kuwait", "United States"];
 
     const scenes = [
@@ -150,9 +153,9 @@
     });
 
     // ---------------------------------------------------
-    // LOAD DATA, THEN START
+    // LOAD DATA
     // ---------------------------------------------------
-    d3.csv("life_expectancy_gdp_data.csv").then(function(data) {
+    d3.csv("life_expectancy.csv").then(function(data) {
 
       data.forEach(d => {
         d.Year = +d.Year;
@@ -162,15 +165,15 @@
 
       fullData = data;
 
-      // Filter for Scene 1: just needs Year, GDP, Life expectancy, Status
       scene1Data = fullData.filter(d =>
         d.Year === YEAR &&
         d.GDP !== null &&
-        d["Life expectancy"] !== null &&
-        d.GDP > 0 // needed since we're using a log scale
+        d["Life expectancy"] !== null
       );
 
-      console.log("Scene 1 data points:", scene1Data.length);
+      console.log("Scene 1 data points (before GDP window):", scene1Data.length);
+      console.log("Points within $5k-$20k GDP window:",
+        scene1Data.filter(d => d.GDP >= GDP_MIN && d.GDP <= GDP_MAX).length);
 
       render();
     }).catch(function(error) {
@@ -179,7 +182,7 @@
     });
 
     // ---------------------------------------------------
-    // RENDER FUNCTION
+    // RENDER
     // ---------------------------------------------------
     function render() {
       d3.select("#scene-title").text(scenes[currentScene].title);
@@ -197,19 +200,27 @@
     }
 
     // ---------------------------------------------------
-    // SCENE 1: GDP vs Life Expectancy
+    // SCENE 1
     // ---------------------------------------------------
     function drawScene1(svg) {
+
+      // Clip path so points outside the $5k-$20k window don't
+      // spill past the chart border
+      svg.append("defs").append("clipPath")
+        .attr("id", "plot-area")
+        .append("rect")
+        .attr("width", innerWidth)
+        .attr("height", innerHeight);
 
       const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // Scales
-      const x = d3.scaleLog()
-        .domain(d3.extent(scene1Data, d => d.GDP))
-        .range([0, innerWidth])
-        .nice();
+      // X scale: fixed linear range $5,000 - $20,000
+      const x = d3.scaleLinear()
+        .domain([GDP_MIN, GDP_MAX])
+        .range([0, innerWidth]);
 
+      // Y scale: life expectancy, based on actual data range
       const y = d3.scaleLinear()
         .domain([
           d3.min(scene1Data, d => d["Life expectancy"]) - 3,
@@ -221,21 +232,25 @@
         .domain(["Developed", "Developing"])
         .range(["#2b6cb0", "#68a063"]);
 
-      // Axes
+      // X axis — numeric ticks at 5000, 7500, 10000... etc.
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
-        .call(d3.axisBottom(x).ticks(5, "~s"));
+        .call(d3.axisBottom(x)
+          .tickValues([5000, 7500, 10000, 12500, 15000, 17500, 20000])
+          .tickFormat(d3.format(",")));
 
+      // Y axis — explicit numeric life expectancy ticks
       g.append("g")
-        .call(d3.axisLeft(y));
+        .call(d3.axisLeft(y)
+          .ticks(8)
+          .tickFormat(d3.format("d")));
 
-      // Axis labels
       g.append("text")
         .attr("class", "axis-label")
         .attr("x", innerWidth / 2)
         .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
-        .text("GDP (log scale)");
+        .text("GDP per Capita (USD, $5,000-$20,000 range)");
 
       g.append("text")
         .attr("class", "axis-label")
@@ -247,8 +262,11 @@
 
       const tooltip = d3.select("#tooltip");
 
-      // Points
-      g.selectAll("circle")
+      // Points container, clipped to the plot area
+      const pointsGroup = g.append("g")
+        .attr("clip-path", "url(#plot-area)");
+
+      pointsGroup.selectAll("circle")
         .data(scene1Data)
         .enter()
         .append("circle")
@@ -294,7 +312,7 @@
     }
 
     // ---------------------------------------------------
-    // PLACEHOLDER SCENES 2 & 3
+    // PLACEHOLDER SCENES
     // ---------------------------------------------------
     function drawScene2(svg) {
       svg.append("text")
