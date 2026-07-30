@@ -33,6 +33,22 @@
       line-height: 1.4;
     }
 
+    #selected-country-box {
+      max-width: 600px;
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: #eef6ff;
+      border-left: 4px solid #2b6cb0;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 20px;
+    }
+
+    #selected-country-box.empty {
+      color: #888;
+      font-style: italic;
+    }
+
     #nav {
       margin-top: 20px;
     }
@@ -74,6 +90,10 @@
       font-size: 13px;
       fill: #333;
     }
+
+    circle {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -81,6 +101,7 @@
   <div id="scene-title"></div>
   <svg id="chart" width="700" height="450"></svg>
   <div id="annotation" class="annotation-box"></div>
+  <div id="selected-country-box" class="empty">Click any point to select a country — it'll stay highlighted as you move between scenes.</div>
 
   <div id="nav">
     <button id="prevBtn">&larr; Previous</button>
@@ -100,6 +121,11 @@
     let scene1Data = [];
     let scene2Data = [];
 
+    // NEW PARAMETER: tracks which country the user has clicked on.
+    // null means nothing selected yet. This persists across scenes
+    // since it's declared outside render()/draw functions.
+    let selectedCountry = null;
+
     const width = 700;
     const height = 450;
     const margin = { top: 30, right: 30, bottom: 55, left: 60 };
@@ -108,7 +134,6 @@
 
     const YEAR = 2014;
 
-    // Fixed GDP window for Scene 1 (unchanged, per your request)
     const GDP_MIN = 8;
     const GDP_MAX = 14;
 
@@ -119,7 +144,8 @@
         title: "Scene 1: The Naive Story — GDP vs. Life Expectancy",
         annotation: "As GDP rises, life expectancy tends to rise too — but look closer. " +
                     "Some high-GDP countries (highlighted in red) don't have the life " +
-                    "expectancy you'd expect from their wealth alone.",
+                    "expectancy you'd expect from their wealth alone. Click any point to " +
+                    "track that country into the next scene.",
         draw: drawScene1
       },
       {
@@ -166,14 +192,12 @@
 
       fullData = data;
 
-      // Scene 1: needs GDP + Life expectancy
       scene1Data = fullData.filter(d =>
         d.Year === YEAR &&
         d.GDP !== null &&
         d["Life expectancy"] !== null
       );
 
-      // Scene 2: needs Schooling + Life expectancy
       scene2Data = fullData.filter(d =>
         d.Year === YEAR &&
         d.Schooling !== null &&
@@ -205,10 +229,69 @@
       svg.selectAll("*").remove();
 
       scenes[currentScene].draw(svg);
+
+      updateSelectedCountryBox();
     }
 
     // ---------------------------------------------------
-    // SCENE 1 (unchanged)
+    // NEW: updates the persistent readout box based on
+    // selectedCountry. Looks up that country's stats from
+    // whichever scene's data is relevant, since GDP only
+    // exists in scene1Data and Schooling only in scene2Data.
+    // ---------------------------------------------------
+    function updateSelectedCountryBox() {
+      const box = d3.select("#selected-country-box");
+
+      if (!selectedCountry) {
+        box.classed("empty", true)
+          .text("Click any point to select a country — it'll stay highlighted as you move between scenes.");
+        return;
+      }
+
+      box.classed("empty", false);
+
+      const inScene1 = scene1Data.find(d => d.Country === selectedCountry);
+      const inScene2 = scene2Data.find(d => d.Country === selectedCountry);
+
+      let text = "Selected: " + selectedCountry;
+      if (inScene1) {
+        text += " | GDP (log): " + d3.format(",.2f")(inScene1.GDP);
+        text += " | Life Exp: " + inScene1["Life expectancy"] + " yrs";
+      }
+      if (inScene2) {
+        text += " | Schooling: " + inScene2.Schooling + " yrs";
+      }
+      if (!inScene1 && !inScene2) {
+        text += " (no data for this country/year)";
+      }
+
+      box.text(text);
+    }
+
+    // ---------------------------------------------------
+    // SHARED HELPER: determines point styling based on
+    // whether a country is the user-selected one, a
+    // pre-defined outlier, or neither. Selected takes
+    // visual priority over outlier styling.
+    // ---------------------------------------------------
+    function pointRadius(d) {
+      if (d.Country === selectedCountry) return 10;
+      if (outlierCountries.includes(d.Country)) return 8;
+      return 5;
+    }
+
+    function pointStroke(d) {
+      if (d.Country === selectedCountry) return "#000";
+      if (outlierCountries.includes(d.Country)) return "red";
+      return "none";
+    }
+
+    function pointStrokeWidth(d) {
+      return d.Country === selectedCountry ? 3 : 2;
+    }
+
+    // ---------------------------------------------------
+    // SCENE 1
     // ---------------------------------------------------
     function drawScene1(svg) {
 
@@ -273,17 +356,18 @@
         .append("circle")
         .attr("cx", d => x(d.GDP))
         .attr("cy", d => y(d["Life expectancy"]))
-        .attr("r", d => outlierCountries.includes(d.Country) ? 8 : 5)
+        .attr("r", d => pointRadius(d))
         .attr("fill", d => color(d.Status))
-        .attr("stroke", d => outlierCountries.includes(d.Country) ? "red" : "none")
-        .attr("stroke-width", 2)
+        .attr("stroke", d => pointStroke(d))
+        .attr("stroke-width", d => pointStrokeWidth(d))
         .attr("opacity", 0.8)
         .on("mouseover", function(event, d) {
           tooltip.style("opacity", 1)
             .html(
               "<strong>" + d.Country + "</strong><br>" +
               "GDP: " + d3.format(",.2f")(d.GDP) + "<br>" +
-              "Life Expectancy: " + d["Life expectancy"] + " years"
+              "Life Expectancy: " + d["Life expectancy"] + " years<br>" +
+              "<em>Click to select</em>"
             );
         })
         .on("mousemove", function(event) {
@@ -292,6 +376,13 @@
         })
         .on("mouseout", function() {
           tooltip.style("opacity", 0);
+        })
+        // NEW TRIGGER: clicking a point sets the selectedCountry
+        // parameter and re-renders so the highlight + readout
+        // box both update immediately.
+        .on("click", function(event, d) {
+          selectedCountry = d.Country;
+          render();
         });
 
       const legend = g.append("g")
@@ -325,7 +416,6 @@
       const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // X scale: schooling, dynamic based on actual data range
       const x = d3.scaleLinear()
         .domain([
           d3.min(scene2Data, d => d.Schooling) - 1,
@@ -334,9 +424,6 @@
         .range([0, innerWidth])
         .nice();
 
-      // Y scale: same life expectancy range approach as Scene 1,
-      // computed from scene2Data so both axes reflect this scene's
-      // actual points
       const y = d3.scaleLinear()
         .domain([
           d3.min(scene2Data, d => d["Life expectancy"]) - 3,
@@ -348,12 +435,10 @@
         .domain(["Developed", "Developing"])
         .range(["#2b6cb0", "#68a063"]);
 
-      // X axis
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x).ticks(8));
 
-      // Y axis
       g.append("g")
         .call(d3.axisLeft(y)
           .ticks(8)
@@ -385,17 +470,18 @@
         .append("circle")
         .attr("cx", d => x(d.Schooling))
         .attr("cy", d => y(d["Life expectancy"]))
-        .attr("r", d => outlierCountries.includes(d.Country) ? 8 : 5)
+        .attr("r", d => pointRadius(d))
         .attr("fill", d => color(d.Status))
-        .attr("stroke", d => outlierCountries.includes(d.Country) ? "red" : "none")
-        .attr("stroke-width", 2)
+        .attr("stroke", d => pointStroke(d))
+        .attr("stroke-width", d => pointStrokeWidth(d))
         .attr("opacity", 0.8)
         .on("mouseover", function(event, d) {
           tooltip.style("opacity", 1)
             .html(
               "<strong>" + d.Country + "</strong><br>" +
               "Schooling: " + d.Schooling + " years<br>" +
-              "Life Expectancy: " + d["Life expectancy"] + " years"
+              "Life Expectancy: " + d["Life expectancy"] + " years<br>" +
+              "<em>Click to select</em>"
             );
         })
         .on("mousemove", function(event) {
@@ -404,9 +490,14 @@
         })
         .on("mouseout", function() {
           tooltip.style("opacity", 0);
+        })
+        // Same trigger as Scene 1 — clicking here also updates
+        // selectedCountry, so the two scenes work symmetrically.
+        .on("click", function(event, d) {
+          selectedCountry = d.Country;
+          render();
         });
 
-      // Legend (same style/position as Scene 1)
       const legend = g.append("g")
         .attr("class", "legend")
         .attr("transform", `translate(${innerWidth - 90}, 10)`);
