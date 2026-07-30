@@ -98,6 +98,7 @@
     let currentScene = 0;
     let fullData = [];
     let scene1Data = [];
+    let scene2Data = [];
 
     const width = 700;
     const height = 450;
@@ -107,9 +108,7 @@
 
     const YEAR = 2014;
 
-    // Fixed GDP per-capita display range: $5,000 - $20,000.
-    // Countries outside this range will simply not appear (clipped).
-    // Change these two numbers if you want a different window.
+    // Fixed GDP window for Scene 1 (unchanged, per your request)
     const GDP_MIN = 8;
     const GDP_MAX = 14;
 
@@ -125,7 +124,8 @@
       },
       {
         title: "Scene 2: Schooling vs. Life Expectancy",
-        annotation: "Placeholder — coming next.",
+        annotation: "Compare this to the last chart — the relationship between schooling " +
+                    "and life expectancy is tighter and more consistent than GDP alone.",
         draw: drawScene2
       },
       {
@@ -161,19 +161,27 @@
         d.Year = +d.Year;
         d.GDP = d.GDP === "" ? null : +d.GDP;
         d["Life expectancy"] = d["Life expectancy"] === "" ? null : +d["Life expectancy"];
+        d.Schooling = d.Schooling === "" ? null : +d.Schooling;
       });
 
       fullData = data;
 
+      // Scene 1: needs GDP + Life expectancy
       scene1Data = fullData.filter(d =>
         d.Year === YEAR &&
         d.GDP !== null &&
         d["Life expectancy"] !== null
       );
 
-      console.log("Scene 1 data points (before GDP window):", scene1Data.length);
-      console.log("Points within 5-20 GDP window:",
-        scene1Data.filter(d => d.GDP >= GDP_MIN && d.GDP <= GDP_MAX).length);
+      // Scene 2: needs Schooling + Life expectancy
+      scene2Data = fullData.filter(d =>
+        d.Year === YEAR &&
+        d.Schooling !== null &&
+        d["Life expectancy"] !== null
+      );
+
+      console.log("Scene 1 data points:", scene1Data.length);
+      console.log("Scene 2 data points (schooling):", scene2Data.length);
 
       render();
     }).catch(function(error) {
@@ -200,12 +208,10 @@
     }
 
     // ---------------------------------------------------
-    // SCENE 1
+    // SCENE 1 (unchanged)
     // ---------------------------------------------------
     function drawScene1(svg) {
 
-      // Clip path so points outside the $5k-$20k window don't
-      // spill past the chart border
       svg.append("defs").append("clipPath")
         .attr("id", "plot-area")
         .append("rect")
@@ -215,12 +221,10 @@
       const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // X scale: fixed linear range $5,000 - $20,000
       const x = d3.scaleLinear()
         .domain([GDP_MIN, GDP_MAX])
         .range([0, innerWidth]);
 
-      // Y scale: life expectancy, based on actual data range
       const y = d3.scaleLinear()
         .domain([
           d3.min(scene1Data, d => d["Life expectancy"]) - 3,
@@ -232,14 +236,12 @@
         .domain(["Developed", "Developing"])
         .range(["#2b6cb0", "#68a063"]);
 
-      // X axis — numeric ticks at 5000, 7500, 10000... etc.
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x)
           .tickValues([8, 10, 12, 14])
           .tickFormat(d3.format(",")));
 
-      // Y axis — explicit numeric life expectancy ticks
       g.append("g")
         .call(d3.axisLeft(y)
           .ticks(8)
@@ -262,7 +264,6 @@
 
       const tooltip = d3.select("#tooltip");
 
-      // Points container, clipped to the plot area
       const pointsGroup = g.append("g")
         .attr("clip-path", "url(#plot-area)");
 
@@ -293,7 +294,6 @@
           tooltip.style("opacity", 0);
         });
 
-      // Legend
       const legend = g.append("g")
         .attr("class", "legend")
         .attr("transform", `translate(${innerWidth - 90}, 10)`);
@@ -301,34 +301,4 @@
       ["Developed", "Developing"].forEach((status, i) => {
         legend.append("circle")
           .attr("cx", 0)
-          .attr("cy", i * 20)
-          .attr("r", 6)
-          .attr("fill", color(status));
-        legend.append("text")
-          .attr("x", 12)
-          .attr("y", i * 20 + 4)
-          .text(status);
-      });
-    }
-
-    // ---------------------------------------------------
-    // PLACEHOLDER SCENES
-    // ---------------------------------------------------
-    function drawScene2(svg) {
-      svg.append("text")
-        .attr("x", 350).attr("y", 225)
-        .attr("text-anchor", "middle")
-        .text("Scene 2 coming next");
-    }
-
-    function drawScene3(svg) {
-      svg.append("text")
-        .attr("x", 350).attr("y", 225)
-        .attr("text-anchor", "middle")
-        .text("Scene 3 coming next");
-    }
-
-  </script>
-
-</body>
-</html>
+          .attr("cy", i
