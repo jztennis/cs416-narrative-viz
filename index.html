@@ -156,7 +156,7 @@
         title: "Scene 3: Government Priorities — Health Expenditure vs. Life Expectancy",
         annotation: "Here, the x-axis is health spending as a share of total government " +
                     "expenditure — a measure of priority, not wealth. Compare the spread " +
-                    "of points here to the schooling chart: this appears to be a [weaker/stronger] " +
+                    "of points here to the schooling chart: this appears to be a stronger " +
                     "predictor than schooling, which reinforces that it's not just about how " +
                     "much money a country has, but how it's spent.",
         draw: drawScene3
@@ -271,7 +271,7 @@
         text += " | Schooling: " + inScene2.Schooling + " yrs";
       }
       if (inScene3) {
-        text += " | Health Exp: " + inScene3["Income composition of resources"];
+        text += " | ICR: " + inScene3["Income composition of resources"];
       }
       if (!inScene1 && !inScene2 && !inScene3) {
         text += " (no data for this country/year)";
@@ -571,7 +571,7 @@
         .attr("x", innerWidth / 2)
         .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
-        .text("Health Expenditure (% of government spending)");
+        .text("Income Composition of Resources");
 
       g.append("text")
         .attr("class", "axis-label")
