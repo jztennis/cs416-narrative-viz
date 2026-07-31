@@ -536,8 +536,8 @@
       // X scale: Income composition of resources, dynamic based on actual data range
       const x = d3.scaleLinear()
         .domain([
-          d3.min(scene3Data, d => d["Income composition of resources"]) - 0.05,
-          d3.max(scene3Data, d => d["Income composition of resources"]) + 0.05
+          d3.min(scene3Data, d => d["Income composition of resources"]) - 0.2,
+          d3.max(scene3Data, d => d["Income composition of resources"]) + 0.2
         ])
         .range([0, innerWidth])
         .nice();
