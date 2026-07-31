@@ -120,10 +120,8 @@
     let fullData = [];
     let scene1Data = [];
     let scene2Data = [];
+    let scene3Data = [];
 
-    // NEW PARAMETER: tracks which country the user has clicked on.
-    // null means nothing selected yet. This persists across scenes
-    // since it's declared outside render()/draw functions.
     let selectedCountry = null;
 
     const width = 700;
@@ -155,8 +153,12 @@
         draw: drawScene2
       },
       {
-        title: "Scene 3: Explore It Yourself",
-        annotation: "Placeholder — coming next.",
+        title: "Scene 3: Government Priorities — Health Expenditure vs. Life Expectancy",
+        annotation: "Here, the x-axis is health spending as a share of total government " +
+                    "expenditure — a measure of priority, not wealth. Compare the spread " +
+                    "of points here to the schooling chart: this appears to be a [weaker/stronger] " +
+                    "predictor than schooling, which reinforces that it's not just about how " +
+                    "much money a country has, but how it's spent.",
         draw: drawScene3
       }
     ];
@@ -188,6 +190,7 @@
         d.GDP = d.GDP === "" ? null : +d.GDP;
         d["Life expectancy"] = d["Life expectancy"] === "" ? null : +d["Life expectancy"];
         d.Schooling = d.Schooling === "" ? null : +d.Schooling;
+        d["Total expenditure"] = d["Total expenditure"] === "" ? null : +d["Total expenditure"];
       });
 
       fullData = data;
@@ -204,8 +207,15 @@
         d["Life expectancy"] !== null
       );
 
+      scene3Data = fullData.filter(d =>
+        d.Year === YEAR &&
+        d["Total expenditure"] !== null &&
+        d["Life expectancy"] !== null
+      );
+
       console.log("Scene 1 data points:", scene1Data.length);
       console.log("Scene 2 data points (schooling):", scene2Data.length);
+      console.log("Scene 3 data points (total expenditure):", scene3Data.length);
 
       render();
     }).catch(function(error) {
@@ -234,10 +244,8 @@
     }
 
     // ---------------------------------------------------
-    // NEW: updates the persistent readout box based on
-    // selectedCountry. Looks up that country's stats from
-    // whichever scene's data is relevant, since GDP only
-    // exists in scene1Data and Schooling only in scene2Data.
+    // Updates the persistent readout box based on
+    // selectedCountry, now including Scene 3's data too.
     // ---------------------------------------------------
     function updateSelectedCountryBox() {
       const box = d3.select("#selected-country-box");
@@ -252,6 +260,7 @@
 
       const inScene1 = scene1Data.find(d => d.Country === selectedCountry);
       const inScene2 = scene2Data.find(d => d.Country === selectedCountry);
+      const inScene3 = scene3Data.find(d => d.Country === selectedCountry);
 
       let text = "Selected: " + selectedCountry;
       if (inScene1) {
@@ -261,7 +270,10 @@
       if (inScene2) {
         text += " | Schooling: " + inScene2.Schooling + " yrs";
       }
-      if (!inScene1 && !inScene2) {
+      if (inScene3) {
+        text += " | Health Exp: " + inScene3["Total expenditure"] + "%";
+      }
+      if (!inScene1 && !inScene2 && !inScene3) {
         text += " (no data for this country/year)";
       }
 
@@ -269,10 +281,7 @@
     }
 
     // ---------------------------------------------------
-    // SHARED HELPER: determines point styling based on
-    // whether a country is the user-selected one, a
-    // pre-defined outlier, or neither. Selected takes
-    // visual priority over outlier styling.
+    // SHARED HELPERS
     // ---------------------------------------------------
     function pointRadius(d) {
       if (d.Country === selectedCountry) return 10;
@@ -377,9 +386,6 @@
         .on("mouseout", function() {
           tooltip.style("opacity", 0);
         })
-        // NEW TRIGGER: clicking a point sets the selectedCountry
-        // parameter and re-renders so the highlight + readout
-        // box both update immediately.
         .on("click", function(event, d) {
           selectedCountry = d.Country;
           render();
@@ -491,8 +497,6 @@
         .on("mouseout", function() {
           tooltip.style("opacity", 0);
         })
-        // Same trigger as Scene 1 — clicking here also updates
-        // selectedCountry, so the two scenes work symmetrically.
         .on("click", function(event, d) {
           selectedCountry = d.Country;
           render();
@@ -516,13 +520,117 @@
     }
 
     // ---------------------------------------------------
-    // PLACEHOLDER SCENE 3
+    // SCENE 3: Total Expenditure vs. Life Expectancy
     // ---------------------------------------------------
     function drawScene3(svg) {
-      svg.append("text")
-        .attr("x", 350).attr("y", 225)
+
+      svg.append("defs").append("clipPath")
+        .attr("id", "plot-area-3")
+        .append("rect")
+        .attr("width", innerWidth)
+        .attr("height", innerHeight);
+
+      const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // X scale: total expenditure, dynamic based on actual data range
+      const x = d3.scaleLinear()
+        .domain([
+          d3.min(scene3Data, d => d["Total expenditure"]) - 1,
+          d3.max(scene3Data, d => d["Total expenditure"]) + 1
+        ])
+        .range([0, innerWidth])
+        .nice();
+
+      // Y scale: same life expectancy approach as Scenes 1 and 2,
+      // computed from this scene's own data
+      const y = d3.scaleLinear()
+        .domain([
+          d3.min(scene3Data, d => d["Life expectancy"]) - 3,
+          d3.max(scene3Data, d => d["Life expectancy"]) + 3
+        ])
+        .range([innerHeight, 0]);
+
+      const color = d3.scaleOrdinal()
+        .domain(["Developed", "Developing"])
+        .range(["#2b6cb0", "#68a063"]);
+
+      g.append("g")
+        .attr("transform", `translate(0,${innerHeight})`)
+        .call(d3.axisBottom(x).ticks(8));
+
+      g.append("g")
+        .call(d3.axisLeft(y)
+          .ticks(8)
+          .tickFormat(d3.format("d")));
+
+      g.append("text")
+        .attr("class", "axis-label")
+        .attr("x", innerWidth / 2)
+        .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
-        .text("Scene 3 coming next");
+        .text("Health Expenditure (% of government spending)");
+
+      g.append("text")
+        .attr("class", "axis-label")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -innerHeight / 2)
+        .attr("y", -45)
+        .attr("text-anchor", "middle")
+        .text("Life Expectancy (years)");
+
+      const tooltip = d3.select("#tooltip");
+
+      const pointsGroup = g.append("g")
+        .attr("clip-path", "url(#plot-area-3)");
+
+      pointsGroup.selectAll("circle")
+        .data(scene3Data)
+        .enter()
+        .append("circle")
+        .attr("cx", d => x(d["Total expenditure"]))
+        .attr("cy", d => y(d["Life expectancy"]))
+        .attr("r", d => pointRadius(d))
+        .attr("fill", d => color(d.Status))
+        .attr("stroke", d => pointStroke(d))
+        .attr("stroke-width", d => pointStrokeWidth(d))
+        .attr("opacity", 0.8)
+        .on("mouseover", function(event, d) {
+          tooltip.style("opacity", 1)
+            .html(
+              "<strong>" + d.Country + "</strong><br>" +
+              "Health Expenditure: " + d["Total expenditure"] + "%<br>" +
+              "Life Expectancy: " + d["Life expectancy"] + " years<br>" +
+              "<em>Click to select</em>"
+            );
+        })
+        .on("mousemove", function(event) {
+          tooltip.style("left", (event.pageX + 12) + "px")
+                 .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("opacity", 0);
+        })
+        .on("click", function(event, d) {
+          selectedCountry = d.Country;
+          render();
+        });
+
+      const legend = g.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${innerWidth - 90}, 10)`);
+
+      ["Developed", "Developing"].forEach((status, i) => {
+        legend.append("circle")
+          .attr("cx", 0)
+          .attr("cy", i * 20)
+          .attr("r", 6)
+          .attr("fill", color(status));
+        legend.append("text")
+          .attr("x", 12)
+          .attr("y", i * 20 + 4)
+          .text(status);
+      });
     }
 
   </script>
