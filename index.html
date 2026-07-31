@@ -271,7 +271,7 @@
         text += " | Schooling: " + inScene2.Schooling + " yrs";
       }
       if (inScene3) {
-        text += " | Health Exp: " + inScene3["Income composition of resources"] + "%";
+        text += " | Health Exp: " + inScene3["Income composition of resources"];
       }
       if (!inScene1 && !inScene2 && !inScene3) {
         text += " (no data for this country/year)";
@@ -536,8 +536,8 @@
       // X scale: Income composition of resources, dynamic based on actual data range
       const x = d3.scaleLinear()
         .domain([
-          d3.min(scene3Data, d => d["Income composition of resources"]) - 1,
-          d3.max(scene3Data, d => d["Income composition of resources"]) + 1
+          d3.min(scene3Data, d => d["Income composition of resources"]) - 0.05,
+          d3.max(scene3Data, d => d["Income composition of resources"]) + 0.05
         ])
         .range([0, innerWidth])
         .nice();
