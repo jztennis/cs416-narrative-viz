@@ -190,7 +190,7 @@
         d.GDP = d.GDP === "" ? null : +d.GDP;
         d["Life expectancy"] = d["Life expectancy"] === "" ? null : +d["Life expectancy"];
         d.Schooling = d.Schooling === "" ? null : +d.Schooling;
-        d["Total expenditure"] = d["Total expenditure"] === "" ? null : +d["Total expenditure"];
+        d["Income composition of resources"] = d["Income composition of resources"] === "" ? null : +d["Income composition of resources"];
       });
 
       fullData = data;
@@ -209,13 +209,13 @@
 
       scene3Data = fullData.filter(d =>
         d.Year === YEAR &&
-        d["Total expenditure"] !== null &&
+        d["Income composition of resources"] !== null &&
         d["Life expectancy"] !== null
       );
 
       console.log("Scene 1 data points:", scene1Data.length);
       console.log("Scene 2 data points (schooling):", scene2Data.length);
-      console.log("Scene 3 data points (total expenditure):", scene3Data.length);
+      console.log("Scene 3 data points (Income composition of resources):", scene3Data.length);
 
       render();
     }).catch(function(error) {
@@ -271,7 +271,7 @@
         text += " | Schooling: " + inScene2.Schooling + " yrs";
       }
       if (inScene3) {
-        text += " | Health Exp: " + inScene3["Total expenditure"] + "%";
+        text += " | Health Exp: " + inScene3["Income composition of resources"] + "%";
       }
       if (!inScene1 && !inScene2 && !inScene3) {
         text += " (no data for this country/year)";
@@ -520,7 +520,7 @@
     }
 
     // ---------------------------------------------------
-    // SCENE 3: Total Expenditure vs. Life Expectancy
+    // SCENE 3: Income composition of resources vs. Life Expectancy
     // ---------------------------------------------------
     function drawScene3(svg) {
 
@@ -533,11 +533,11 @@
       const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // X scale: total expenditure, dynamic based on actual data range
+      // X scale: Income composition of resources, dynamic based on actual data range
       const x = d3.scaleLinear()
         .domain([
-          d3.min(scene3Data, d => d["Total expenditure"]) - 1,
-          d3.max(scene3Data, d => d["Total expenditure"]) + 1
+          d3.min(scene3Data, d => d["Income composition of resources"]) - 1,
+          d3.max(scene3Data, d => d["Income composition of resources"]) + 1
         ])
         .range([0, innerWidth])
         .nice();
@@ -590,7 +590,7 @@
         .data(scene3Data)
         .enter()
         .append("circle")
-        .attr("cx", d => x(d["Total expenditure"]))
+        .attr("cx", d => x(d["Income composition of resources"]))
         .attr("cy", d => y(d["Life expectancy"]))
         .attr("r", d => pointRadius(d))
         .attr("fill", d => color(d.Status))
@@ -601,7 +601,7 @@
           tooltip.style("opacity", 1)
             .html(
               "<strong>" + d.Country + "</strong><br>" +
-              "Health Expenditure: " + d["Total expenditure"] + "%<br>" +
+              "Health Expenditure: " + d["Income composition of resources"] + "%<br>" +
               "Life Expectancy: " + d["Life expectancy"] + " years<br>" +
               "<em>Click to select</em>"
             );
