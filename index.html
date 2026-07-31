@@ -557,7 +557,9 @@
 
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
-        .call(d3.axisBottom(x).ticks(8));
+        .call(d3.axisBottom(x)
+          .tickValues([0, 0.5, 1])
+          .tickFormat(d3.format(",")));;
 
       g.append("g")
         .call(d3.axisLeft(y)
