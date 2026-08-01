@@ -135,7 +135,12 @@
     const GDP_MIN = 8;
     const GDP_MAX = 14;
 
-    const outlierCountries = ["India", "China", "United States of America"];
+    // CHANGED: separate outlier lists per scene instead of one
+    // shared array. Pick whichever countries are actually the
+    // visual outliers in each scene's chart once you've eyeballed it.
+    const outlierCountriesScene1 = ["India", "China", "United States of America"];
+    const outlierCountriesScene2 = ["South Africa", "Brazil", "Norway"];
+    const outlierCountriesScene3 = ["Cuba", "Saudi Arabia", "Vietnam"];
 
     const scenes = [
       {
@@ -260,13 +265,13 @@
       const inScene2 = scene2Data.find(d => d.Country === selectedCountry);
       const inScene3 = scene3Data.find(d => d.Country === selectedCountry);
 
-      let text = selectedCountry;
+      let text = "Selected: " + selectedCountry;
       if (inScene1) {
-        text += " | log(GDP): " + d3.format(",.2f")(inScene1.GDP);
-        text += " | LE: " + inScene1["Life expectancy"] + " yrs";
+        text += " | GDP (log): " + d3.format(",.2f")(inScene1.GDP);
+        text += " | Life Exp: " + inScene1["Life expectancy"] + " yrs";
       }
       if (inScene2) {
-        text += " | School: " + inScene2.Schooling + " yrs";
+        text += " | Schooling: " + inScene2.Schooling + " yrs";
       }
       if (inScene3) {
         text += " | ICOR: " + inScene3["Income composition of resources"];
@@ -280,16 +285,20 @@
 
     // ---------------------------------------------------
     // SHARED HELPERS
+    // CHANGED: each function now takes an `outlierList` param
+    // so different scenes can pass in different outlier arrays.
+    // Selected country still takes visual priority over outlier
+    // styling, same as before.
     // ---------------------------------------------------
-    function pointRadius(d) {
+    function pointRadius(d, outlierList) {
       if (d.Country === selectedCountry) return 10;
-      if (outlierCountries.includes(d.Country)) return 8;
+      if (outlierList.includes(d.Country)) return 8;
       return 5;
     }
 
-    function pointStroke(d) {
+    function pointStroke(d, outlierList) {
       if (d.Country === selectedCountry) return "#000";
-      if (outlierCountries.includes(d.Country)) return "red";
+      if (outlierList.includes(d.Country)) return "red";
       return "none";
     }
 
@@ -363,9 +372,9 @@
         .append("circle")
         .attr("cx", d => x(d.GDP))
         .attr("cy", d => y(d["Life expectancy"]))
-        .attr("r", d => pointRadius(d))
+        .attr("r", d => pointRadius(d, outlierCountriesScene1))
         .attr("fill", d => color(d.Status))
-        .attr("stroke", d => pointStroke(d))
+        .attr("stroke", d => pointStroke(d, outlierCountriesScene1))
         .attr("stroke-width", d => pointStrokeWidth(d))
         .attr("opacity", 0.8)
         .on("mouseover", function(event, d) {
@@ -474,9 +483,9 @@
         .append("circle")
         .attr("cx", d => x(d.Schooling))
         .attr("cy", d => y(d["Life expectancy"]))
-        .attr("r", d => pointRadius(d))
+        .attr("r", d => pointRadius(d, outlierCountriesScene2))
         .attr("fill", d => color(d.Status))
-        .attr("stroke", d => pointStroke(d))
+        .attr("stroke", d => pointStroke(d, outlierCountriesScene2))
         .attr("stroke-width", d => pointStrokeWidth(d))
         .attr("opacity", 0.8)
         .on("mouseover", function(event, d) {
@@ -531,7 +540,6 @@
       const g = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // X scale: Income composition of resources, dynamic based on actual data range
       const x = d3.scaleLinear()
         .domain([
           d3.min(scene3Data, d => d["Income composition of resources"]) - 0.2,
@@ -540,8 +548,6 @@
         .range([0, innerWidth])
         .nice();
 
-      // Y scale: same life expectancy approach as Scenes 1 and 2,
-      // computed from this scene's own data
       const y = d3.scaleLinear()
         .domain([
           d3.min(scene3Data, d => d["Life expectancy"]) - 3,
@@ -557,7 +563,7 @@
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x)
           .tickValues([0, 0.5, 1])
-          .tickFormat(d3.format(",")));;
+          .tickFormat(d3.format(",")));
 
       g.append("g")
         .call(d3.axisLeft(y)
@@ -590,9 +596,9 @@
         .append("circle")
         .attr("cx", d => x(d["Income composition of resources"]))
         .attr("cy", d => y(d["Life expectancy"]))
-        .attr("r", d => pointRadius(d))
+        .attr("r", d => pointRadius(d, outlierCountriesScene3))
         .attr("fill", d => color(d.Status))
-        .attr("stroke", d => pointStroke(d))
+        .attr("stroke", d => pointStroke(d, outlierCountriesScene3))
         .attr("stroke-width", d => pointStrokeWidth(d))
         .attr("opacity", 0.8)
         .on("mouseover", function(event, d) {
