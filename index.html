@@ -139,8 +139,8 @@
     // shared array. Pick whichever countries are actually the
     // visual outliers in each scene's chart once you've eyeballed it.
     const outlierCountriesScene1 = ["India", "China", "United States of America"];
-    const outlierCountriesScene2 = ["South Africa", "Brazil", "Norway"];
-    const outlierCountriesScene3 = ["Cuba", "Saudi Arabia", "Vietnam"];
+    const outlierCountriesScene2 = ["Angola", "Cyprus", "Australia"];
+    const outlierCountriesScene3 = ["Sierra Leone", "Germany", "Portugal"];
 
     const scenes = [
       {
@@ -542,8 +542,8 @@
 
       const x = d3.scaleLinear()
         .domain([
-          d3.min(scene3Data, d => d["Income composition of resources"]) - 0.2,
-          d3.max(scene3Data, d => d["Income composition of resources"]) + 0.2
+          d3.min(scene3Data, d => d["Income composition of resources"]) - 0.15,
+          d3.max(scene3Data, d => d["Income composition of resources"]) + 0.15
         ])
         .range([0, innerWidth])
         .nice();
@@ -562,7 +562,7 @@
       g.append("g")
         .attr("transform", `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x)
-          .tickValues([0, 0.5, 1])
+          .tickValues([0.25, 0.5, 0.75, 1])
           .tickFormat(d3.format(",")));
 
       g.append("g")
