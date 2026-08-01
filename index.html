@@ -101,7 +101,7 @@
   <div id="scene-title"></div>
   <svg id="chart" width="700" height="450"></svg>
   <div id="annotation" class="annotation-box"></div>
-  <div id="selected-country-box" class="empty">Click any point to select a country — it'll stay highlighted as you move between scenes.</div>
+  <div id="selected-country-box" class="empty">Click any point to select a country.</div>
 
   <div id="nav">
     <button id="prevBtn">&larr; Previous</button>
@@ -139,26 +139,24 @@
 
     const scenes = [
       {
-        title: "Scene 1 -- The Naive Story: GDP vs. Life Expectancy",
+        title: "Naive Assumptions: GDP vs. Life Expectancy",
         annotation: "As GDP rises, life expectancy tends to rise too — but look closer. " +
                     "Some high-GDP countries (highlighted in red) don't have the life " +
-                    "expectancy you'd expect from their wealth alone. Click any point to " +
-                    "track that country into the next scene.",
+                    "expectancy you'd expect from their wealth alone.",
         draw: drawScene1
       },
       {
-        title: "Scene 2 -- Schooling vs. Life Expectancy",
-        annotation: "Compare this to the last chart — the relationship between schooling " +
+        title: "Schooling vs. Life Expectancy",
+        annotation: "Compared to the last chart, the relationship between schooling " +
                     "and life expectancy is tighter and more consistent than GDP alone.",
         draw: drawScene2
       },
       {
-        title: "Scene 3 -- Government Priorities: Health Expenditure vs. Life Expectancy",
-        annotation: "Here, the x-axis is health spending as a share of total government " +
-                    "expenditure — a measure of priority, not wealth. Compare the spread " +
-                    "of points here to the schooling chart: this appears to be a stronger " +
-                    "predictor than schooling, which reinforces that it's not just about how " +
-                    "much money a country has, but how it's spent.",
+        title: "Government Priorities: Health Expenditure vs. Life Expectancy",
+        annotation: "Here, the x-axis is income composition of resources (a statistical measure from 0 to 1 on how well " + 
+                    "a country generates and distributes income). Compared to the spread " +
+                    "of schooling chart, this appears to be an even stronger " +
+                    "predictor than schooling.",
         draw: drawScene3
       }
     ];
