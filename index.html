@@ -260,13 +260,13 @@
       const inScene2 = scene2Data.find(d => d.Country === selectedCountry);
       const inScene3 = scene3Data.find(d => d.Country === selectedCountry);
 
-      let text = "Selected: " + selectedCountry;
+      let text = selectedCountry;
       if (inScene1) {
-        text += " | GDP (log): " + d3.format(",.2f")(inScene1.GDP);
-        text += " | Life Exp: " + inScene1["Life expectancy"] + " yrs";
+        text += " | log(GDP): " + d3.format(",.2f")(inScene1.GDP);
+        text += " | LE: " + inScene1["Life expectancy"] + " yrs";
       }
       if (inScene2) {
-        text += " | Schooling: " + inScene2.Schooling + " yrs";
+        text += " | School: " + inScene2.Schooling + " yrs";
       }
       if (inScene3) {
         text += " | ICOR: " + inScene3["Income composition of resources"];
@@ -599,7 +599,7 @@
           tooltip.style("opacity", 1)
             .html(
               "<strong>" + d.Country + "</strong><br>" +
-              "Health Expenditure: " + d["Income composition of resources"] + "%<br>" +
+              "ICOR: " + d["Income composition of resources"] + "%<br>" +
               "Life Expectancy: " + d["Life expectancy"] + " years<br>" +
               "<em>Click to select</em>"
             );
